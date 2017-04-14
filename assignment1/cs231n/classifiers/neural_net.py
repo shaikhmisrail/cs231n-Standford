@@ -66,9 +66,18 @@ class TwoLayerNet(object):
     W1, b1 = self.params['W1'], self.params['b1']
     W2, b2 = self.params['W2'], self.params['b2']
     N, D = X.shape
-
+    #print b1.shape
+    
     # Compute the forward pass
+    num_train = X.shape[0]
     scores = None
+    #b1 = np.tile(b1, (N, 1))
+    #b2 = np.tile(b2, (N, 1))
+    h1 = np.dot(X, W1) + b1              #(5,4)x(4,10) = (5,10)
+    #print h1.shape
+    h1[h1<0] = 0
+    scores = np.dot(h1 ,W2)+ b2              #(5,10)x(10,3) = (5,3)
+                             #(5,3)
     #############################################################################
     # TODO: Perform the forward pass, computing the class scores for the input. #
     # Store the result in the scores variable, which should be an array of      #
@@ -85,6 +94,25 @@ class TwoLayerNet(object):
 
     # Compute the loss
     loss = None
+    #print 'y.shape = ' ,y.shape
+    '''
+    for i in range(scores.shape[0]):
+        exp_scores = np.exp(scores[i])
+        corr = exp_scores[y[i]]
+        sum_exp = np.sum(exp_scores[i])
+        prob = corr/sum_exp
+        log_prob = -np.log(prob)
+        loss += log_prob
+    '''
+    n = np.arange(N)
+    scores -= np.amax(scores)
+    exp_scores = np.exp(scores)
+    corr_scores = np.reshape(exp_scores[n,y],(exp_scores[n,y].shape[0],-1))
+    sum_exp_scores = np.sum(exp_scores, axis = 1, keepdims = True)
+    nlf = -np.log(corr_scores/sum_exp_scores)
+    loss = np.sum(nlf)
+    loss /= y.shape[0]
+    loss += (np.sum(W1 * W1) + np.sum(W2 * W2)) * 0.5 * reg
     #############################################################################
     # TODO: Finish the forward pass, and compute the loss. This should include  #
     # both the data loss and L2 regularization for W1 and W2. Store the result  #
@@ -99,6 +127,25 @@ class TwoLayerNet(object):
 
     # Backward pass: compute gradients
     grads = {}
+    dnlf = np.ones((N, 1))
+    dsum_exp_scores = (sum_exp_scores/corr_scores) * (corr_scores/(sum_exp_scores**2)) * dnlf
+    #print 'dsum_exp_scores.shape ' ,dsum_exp_scores.shape                                           #(5,1)
+    dcorr_scores = -1*(sum_exp_scores/corr_scores) * (1/sum_exp_scores) * dnlf
+    #print 'dcorr_scores.shape ' , dcorr_scores.shape
+    dexp_scores = np.outer(dsum_exp_scores, np.ones(scores.shape[1]))
+    dcorr_scores = np.reshape(dcorr_scores , (N,))
+    dexp_scores[n,y] += dcorr_scores
+    dscores = np.exp(scores) * dexp_scores
+    dW2 = np.dot(h1.T, dscores)
+    db2 = np.sum(dscores, axis = 0)
+    dh1 = np.dot(dscores, W2.T)
+    dW1 = np.dot(X.T, dh1)
+    db1 = np.sum(dh1, axis = 0)
+    #print 'db1 : ', db1
+    grads['W1'] = dW1
+    grads['W2'] = dW2
+    grads['b1'] = db1
+    grads['b2'] = db2
     #############################################################################
     # TODO: Compute the backward pass, computing the derivatives of the weights #
     # and biases. Store the results in the grads dictionary. For example,       #
@@ -143,7 +190,9 @@ class TwoLayerNet(object):
     for it in xrange(num_iters):
       X_batch = None
       y_batch = None
-
+      index = np.random.choice(num_train, batch_size, replace = True)
+      X_batch = X[index]
+      y_batch = y[index]
       #########################################################################
       # TODO: Create a random minibatch of training data and labels, storing  #
       # them in X_batch and y_batch respectively.                             #
@@ -156,7 +205,12 @@ class TwoLayerNet(object):
       # Compute loss and gradients using the current minibatch
       loss, grads = self.loss(X_batch, y=y_batch, reg=reg)
       loss_history.append(loss)
-
+      #print 'b1.shape = ',self.params['b1'].shape
+      #print 'grads[b1].shape = ' , grads['b1'].shape
+      self.params['W1'] -= learning_rate * grads['W1']
+      self.params['b1'] = -(learning_rate * grads['b1'] - self.params['b1'])
+      self.params['W2'] -= learning_rate * grads['W2']
+      self.params['b2'] = -(learning_rate * grads['b2']-self.params['b2'])
       #########################################################################
       # TODO: Use the gradients in the grads dictionary to update the         #
       # parameters of the network (stored in the dictionary self.params)      #
@@ -204,7 +258,11 @@ class TwoLayerNet(object):
       to have class c, where 0 <= c < C.
     """
     y_pred = None
-
+    h1 = np.dot(X, self.params['W1']) + self.params['b1']  
+    h1[h1<0] = 0
+    scores = np.dot(h1 , self.params['W2'])+ self.params['b2']  
+    y_pred = np.argmax(scores, axis = 1)
+    
     ###########################################################################
     # TODO: Implement this function; it should be VERY simple!                #
     ###########################################################################
@@ -216,3 +274,4 @@ class TwoLayerNet(object):
     return y_pred
 
 
+    
