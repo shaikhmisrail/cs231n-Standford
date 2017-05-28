@@ -8,7 +8,7 @@ class LinearClassifier(object):
     self.W = None
 
   def train(self, X, y, learning_rate=1e-3, reg=1e-5, num_iters=100,
-            batch_size=200, verbose=False):
+            batch_size=100, verbose=False):
     """
     Train this linear classifier using stochastic gradient descent.
 
@@ -37,7 +37,7 @@ class LinearClassifier(object):
     for it in xrange(num_iters):
       X_batch = None
       y_batch = None
-      index = np.random.choice(X.shape[0],batch_size,replace = True)
+      index = np.random.choice(num_train, batch_size, replace = True)
       X_batch = X[index]
       y_batch = y[index]
       #print 'shape of y-batch = %d X-batch = '%(y_batch.shape[0]), X_batch.shape[0]  
