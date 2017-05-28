@@ -105,6 +105,7 @@ class TwoLayerNet(object):
         loss += log_prob
     '''
     n = np.arange(N)
+<<<<<<< HEAD
     #print 'scores before: ' ,scores
     scores -= np.amax(scores)
     #print 'scores later: ' ,scores
@@ -112,6 +113,11 @@ class TwoLayerNet(object):
     #print 'exp_scores: ', exp_scores
     corr_scores = np.reshape(exp_scores[n,y],(exp_scores[n,y].shape[0],-1))
     #print 'corr_scores.shape :',corr_scores.shape 
+=======
+    scores -= np.amax(scores)
+    exp_scores = np.exp(scores)
+    corr_scores = np.reshape(exp_scores[n,y],(exp_scores[n,y].shape[0],-1))
+>>>>>>> ae98b4adad7de60f992c774ba349387e64d29410
     sum_exp_scores = np.sum(exp_scores, axis = 1, keepdims = True)
     nlf = -np.log(corr_scores/sum_exp_scores)
     loss = np.sum(nlf)
@@ -143,9 +149,12 @@ class TwoLayerNet(object):
     dW2 = np.dot(h1.T, dscores)
     db2 = np.sum(dscores, axis = 0)
     dh1 = np.dot(dscores, W2.T)
+<<<<<<< HEAD
     h1_like = np.ones(dh1.shape)
     h1_like[h1<0] = 0
     dh1 = dh1 * h1_like
+=======
+>>>>>>> ae98b4adad7de60f992c774ba349387e64d29410
     dW1 = np.dot(X.T, dh1)
     db1 = np.sum(dh1, axis = 0)
     #print 'db1 : ', db1
@@ -215,9 +224,15 @@ class TwoLayerNet(object):
       #print 'b1.shape = ',self.params['b1'].shape
       #print 'grads[b1].shape = ' , grads['b1'].shape
       self.params['W1'] -= learning_rate * grads['W1']
+<<<<<<< HEAD
       self.params['b1']-= learning_rate * grads['b1']
       self.params['W2'] -= learning_rate * grads['W2']
       self.params['b2'] -= learning_rate * grads['b2']
+=======
+      self.params['b1'] = -(learning_rate * grads['b1'] - self.params['b1'])
+      self.params['W2'] -= learning_rate * grads['W2']
+      self.params['b2'] = -(learning_rate * grads['b2']-self.params['b2'])
+>>>>>>> ae98b4adad7de60f992c774ba349387e64d29410
       #########################################################################
       # TODO: Use the gradients in the grads dictionary to update the         #
       # parameters of the network (stored in the dictionary self.params)      #
