@@ -71,13 +71,11 @@ class TwoLayerNet(object):
     # Compute the forward pass
     num_train = X.shape[0]
     scores = None
-    #b1 = np.tile(b1, (N, 1))
-    #b2 = np.tile(b2, (N, 1))
     h1 = np.dot(X, W1) + b1              #(5,4)x(4,10) = (5,10)
     #print h1.shape
     h1[h1<0] = 0
     scores = np.dot(h1 ,W2)+ b2              #(5,10)x(10,3) = (5,3)
-                             #(5,3)
+                             
     #############################################################################
     # TODO: Perform the forward pass, computing the class scores for the input. #
     # Store the result in the scores variable, which should be an array of      #
@@ -105,24 +103,24 @@ class TwoLayerNet(object):
         loss += log_prob
     '''
     n = np.arange(N)
-<<<<<<< HEAD
+#<<<<<<< HEAD
     #print 'scores before: ' ,scores
-    scores -= np.amax(scores)
+    scores -= np.amax(scores)                               #(5,3)
     #print 'scores later: ' ,scores
-    exp_scores = np.exp(scores)
+    exp_scores = np.exp(scores)                              #(5,3)
     #print 'exp_scores: ', exp_scores
-    corr_scores = np.reshape(exp_scores[n,y],(exp_scores[n,y].shape[0],-1))
+    corr_scores = np.reshape(exp_scores[n,y],(exp_scores[n,y].shape[0],-1))      #(5,1)
     #print 'corr_scores.shape :',corr_scores.shape 
-=======
-    scores -= np.amax(scores)
-    exp_scores = np.exp(scores)
-    corr_scores = np.reshape(exp_scores[n,y],(exp_scores[n,y].shape[0],-1))
->>>>>>> ae98b4adad7de60f992c774ba349387e64d29410
-    sum_exp_scores = np.sum(exp_scores, axis = 1, keepdims = True)
-    nlf = -np.log(corr_scores/sum_exp_scores)
-    loss = np.sum(nlf)
-    loss /= y.shape[0]
-    loss += (np.sum(W1 * W1) + np.sum(W2 * W2)) * 0.5 * reg
+#=======
+    #scores -= np.amax(scores)                                 
+    # exp_scores = np.exp(scores)
+    #  corr_scores = np.reshape(exp_scores[n,y],(exp_scores[n,y].shape[0],-1))
+#>>>>>>> ae98b4adad7de60f992c774ba349387e64d29410
+    sum_exp_scores = np.sum(exp_scores, axis = 1, keepdims = True)    #(5,1)
+    nlf = -np.log(corr_scores/sum_exp_scores)                          #(5,1)
+    loss = np.sum(nlf)                                                 #1
+    loss /= y.shape[0]                                                 #1
+    loss += (np.sum(W1 * W1) + np.sum(W2 * W2)) * 0.5 * reg            #1
     #############################################################################
     # TODO: Finish the forward pass, and compute the loss. This should include  #
     # both the data loss and L2 regularization for W1 and W2. Store the result  #
@@ -137,26 +135,31 @@ class TwoLayerNet(object):
 
     # Backward pass: compute gradients
     grads = {}
-    dnlf = np.ones((N, 1))
-    dsum_exp_scores = (sum_exp_scores/corr_scores) * (corr_scores/(sum_exp_scores**2)) * dnlf
-    #print 'dsum_exp_scores.shape ' ,dsum_exp_scores.shape                                           #(5,1)
-    dcorr_scores = -1*(sum_exp_scores/corr_scores) * (1/sum_exp_scores) * dnlf
+    dloss = 1
+    dW1 = np.ones((W1.shape))* 2 * W1 * 0.5 * reg * dloss                #(4,10)
+    dW2 = np.ones((W2.shape))* 2 * W2 * 0.5 * reg * dloss                #(10,3)
+    dloss += 1/y.shape[0]                                                #1
+    dnlf = np.ones((N, 1))                                               #(5,1)
+    dsum_exp_scores = (sum_exp_scores/corr_scores) * (corr_scores/(sum_exp_scores**2)) * dnlf     #(5,1).(5,1).(5,1) = (5,1)
+    #print 'dsum_exp_scores.shape ' ,dsum_exp_scores.shape                                        
+    dcorr_scores = -1*(sum_exp_scores/corr_scores) * (1/sum_exp_scores) * dnlf                    #(5,1).(5,1).(5,1) = (5,1)
     #print 'dcorr_scores.shape ' , dcorr_scores.shape
-    dexp_scores = np.outer(dsum_exp_scores, np.ones(scores.shape[1]))
-    dcorr_scores = np.reshape(dcorr_scores , (N,))
-    dexp_scores[n,y] += dcorr_scores
-    dscores = np.exp(scores) * dexp_scores
-    dW2 = np.dot(h1.T, dscores)
-    db2 = np.sum(dscores, axis = 0)
-    dh1 = np.dot(dscores, W2.T)
-<<<<<<< HEAD
-    h1_like = np.ones(dh1.shape)
+    dexp_scores = np.outer(dsum_exp_scores, np.ones(scores.shape[1]))                             #(5,1).(3,) = (5,3)
+    dcorr_scores = np.reshape(dcorr_scores , (N,))                                                #(5,)
+    #print 'dcorr_scores = ', dcorr_scores.shape
+    dexp_scores[n,y] += dcorr_scores                                                              #(5,3)
+    dscores = np.exp(scores) * dexp_scores                                                        #(5,3)
+    dW2 += np.dot(h1.T, dscores)                                                                  #(10,5).(5,3) = (10,3)
+    db2 = np.sum(dscores, axis = 0)                                                               #(3,)
+    dh1 = np.dot(dscores, W2.T)                                                                   #(5,3).(3,10) = (5,10)
+#<<<<<<< HEAD
+    h1_like = np.ones(dh1.shape)                                                                  #(5,10)
     h1_like[h1<0] = 0
-    dh1 = dh1 * h1_like
-=======
->>>>>>> ae98b4adad7de60f992c774ba349387e64d29410
-    dW1 = np.dot(X.T, dh1)
-    db1 = np.sum(dh1, axis = 0)
+    dh1 = dh1 * h1_like                                                                           #(5,10)
+#=======
+#>>>>>>> ae98b4adad7de60f992c774ba349387e64d29410
+    dW1 += np.dot(X.T, dh1)                                                                       #(4,5).(5,10) = (4,10)
+    db1 = np.sum(dh1, axis = 0)                                                                   #(10,)
     #print 'db1 : ', db1
     grads['W1'] = dW1
     grads['W2'] = dW2
@@ -224,15 +227,15 @@ class TwoLayerNet(object):
       #print 'b1.shape = ',self.params['b1'].shape
       #print 'grads[b1].shape = ' , grads['b1'].shape
       self.params['W1'] -= learning_rate * grads['W1']
-<<<<<<< HEAD
+#<<<<<<< HEAD
       self.params['b1']-= learning_rate * grads['b1']
       self.params['W2'] -= learning_rate * grads['W2']
       self.params['b2'] -= learning_rate * grads['b2']
-=======
+#=======
       self.params['b1'] = -(learning_rate * grads['b1'] - self.params['b1'])
       self.params['W2'] -= learning_rate * grads['W2']
       self.params['b2'] = -(learning_rate * grads['b2']-self.params['b2'])
->>>>>>> ae98b4adad7de60f992c774ba349387e64d29410
+#>>>>>>> ae98b4adad7de60f992c774ba349387e64d29410
       #########################################################################
       # TODO: Use the gradients in the grads dictionary to update the         #
       # parameters of the network (stored in the dictionary self.params)      #
