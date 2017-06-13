@@ -75,10 +75,10 @@ class TwoLayerNet(object):
     #############################################################################
     
      # Compute the forward pass
+        
     num_train = X.shape[0]
     scores = None
     h1 = np.dot(X, W1) + b1              #(5,4)x(4,10) = (5,10)
-    #print h1.shape
     h1[h1<0] = 0
     scores = np.dot(h1 ,W2)+ b2              #(5,10)x(10,3) = (5,3)
     #############################################################################
@@ -90,10 +90,6 @@ class TwoLayerNet(object):
       return scores
 
     # Compute the loss
-    '''loss = None 
-    n = np.arange(N)
-
-
     #############################################################################
     # TODO: Finish the forward pass, and compute the loss. This should include  #
     # both the data loss and L2 regularization for W1 and W2. Store the result  #
@@ -101,58 +97,32 @@ class TwoLayerNet(object):
     # classifier loss. So that your results match ours, multiply the            #
     # regularization loss by 0.5                                                #
     #############################################################################
-    #print 'scores before: ' ,scores
-    s = np.amax(scores)
-    scores -= np.amax(scores)                               #(5,3)
-    #print 'scores later: ' ,scores
-    exp_scores = np.exp(scores)                              #(5,3)
-    #print 'exp_scores: ', exp_scores
-    corr_scores = np.reshape(exp_scores[n,y],(exp_scores[n,y].shape[0],-1))      #(5,1)
-    #print 'corr_scores.shape :',corr_scores.shape 
-    sum_exp_scores = np.sum(exp_scores, axis = 1, keepdims = True)    #(5,1)
-    nlp = -np.log(corr_scores/sum_exp_scores)                          #(5,1)
-    loss = np.sum(nlp)                                                 #1
-    loss /= y.shape[0]                                                 #1
-    loss += (np.sum(W1 * W1) + np.sum(W2 * W2)) * 0.5 * reg            #1'''
+    
     loss = 0.0
-    #dW = np.zeros_like(W)
     n = np.arange(y.shape[0])
     num_train = y.shape[0]
     c = scores.shape[1]
-  
-    #scores = np.dot(X,W)                                 #NxC  
-    scores -= np.max(scores, axis = 1,keepdims = True)   #Nx1
-    exp_scores = np.exp(scores)                          #NxC
-    corr_scores = np.reshape(exp_scores[n,y],(exp_scores.shape[0],-1))               #Nx1  dscores[n,y] = 1*dcorr_scores
-                                                                                   #exp_corr_scores = np.exp(corr_scores)
-    sum_exp_scores = np.sum(exp_scores, axis = 1, keepdims = True)+1e-8      #Nx1
-    inv_sum_exp_scores = 1/sum_exp_scores                #N,1
-    f = corr_scores * inv_sum_exp_scores                 #(Nx1)*(Nx1) = (Nx1)
-    lf = np.log(f)                                       #Nx1
-    nlf = -1*lf
-    loss = np.sum(nlf)                                   #1
+    scores -= np.max(scores, axis = 1,keepdims = True)                               #Nx1
+    exp_scores = np.exp(scores)                                                      #NxC
+    corr_scores = np.reshape(exp_scores[n,y],(exp_scores.shape[0],-1))               #Nx1  
+    sum_exp_scores = np.sum(exp_scores, axis = 1, keepdims = True)+1e-8              #Nx1
+    inv_sum_exp_scores = 1/sum_exp_scores                                            #N,1
+    f = corr_scores * inv_sum_exp_scores                                             #(Nx1)*(Nx1) = (Nx1)
+    lf = np.log(f)                                                                   #Nx1
+    nlf = -1*lf   
+    loss = np.sum(nlf)                                                               #1
     loss /= num_train
-    loss += 0.5*reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
-    
-    '''dloss = 1
-    dW1 = 2 * 0.5 * W1 * reg * dloss
-    dW2 = 2 * 0.5 * W2 * reg * dloss
-    dloss += (1/num_train)'''
-    dnlf = np.ones((num_train,1))                        #Nx1
-    dlf = -1 * dnlf                                      #Nx1
-    df = (1/f) * dlf                                           #(Nx1)
-    dcorr_scores = inv_sum_exp_scores * df                #(N,1).(N,1) = (N,1)
-    dinv_sum_exp_scores = corr_scores * df                #(Nx1).(Nx1) = (Nx1)
-    dsum_exp_scores = (-1/(sum_exp_scores ** 2))* dinv_sum_exp_scores        ##(Nx1).(Nx1) = (Nx1)
-    dexp_scores = np.outer(dsum_exp_scores,np.ones(c))                                   #Nxc 
-    dcorr_scores = np.reshape(dcorr_scores, (num_train,))   
-    dexp_scores[n,y] += dcorr_scores   
-  
-  #print dcorr_scores.shape
-  #print dinv_sum_exp_scores.shape
-  #dexp_scores += dcorr_scores
-  
-    dscores = np.exp(scores) * dexp_scores                   #NxC
+    loss += 0.5*reg * (np.sum(W1 * W1) + np.sum(W2 * W2))    
+    dnlf = np.ones((num_train,1))                                                    #Nx1
+    dlf = -1 * dnlf                                                                  #Nx1
+    df = (1/f) * dlf                                                                 #(Nx1)
+    dcorr_scores = inv_sum_exp_scores * df                                           #(N,1).(N,1) = (N,1)
+    dinv_sum_exp_scores = corr_scores * df                                           #(Nx1).(Nx1) = (Nx1)
+    dsum_exp_scores = (-1/(sum_exp_scores ** 2))* dinv_sum_exp_scores                ##(Nx1).(Nx1) = (Nx1)
+    dexp_scores = np.outer(dsum_exp_scores,np.ones(c))                               #Nxc 
+    dcorr_scores = np.reshape(dcorr_scores, (num_train,))                            #(N,)
+    dexp_scores[n,y] += dcorr_scores                                                 #NxC
+    dscores = np.exp(scores) * dexp_scores                                           #NxC
     
 
     #############################################################################
@@ -168,52 +138,22 @@ class TwoLayerNet(object):
     
      # Backward pass: compute gradients
     grads = {}
-    ''' dloss = 1
-    dW1 = np.ones((W1.shape))* 2 * W1 * 0.5 * reg * dloss                #(4,10)
-    dW2 = np.ones((W2.shape))* 2 * W2 * 0.5 * reg * dloss                #(10,3)
-    dloss += (1.0/y.shape[0])* dloss                                      #1
-    dnlp = np.ones((N, 1)) * dloss                                        #(5,1)
-    dsum_exp_scores = (sum_exp_scores/corr_scores) * (corr_scores/(sum_exp_scores**2)) * dnlp     #(5,1).(5,1).(5,1) = (5,1)
-    #print 'dsum_exp_scores.shape ' ,dsum_exp_scores.shape                                        
-    dcorr_scores = -1*(sum_exp_scores/corr_scores) * (1/sum_exp_scores) * dnlp                    #(5,1).(5,1).(5,1) = (5,1)
-    #print 'dcorr_scores.shape ' , dcorr_scores.shape
-    dexp_scores = np.outer(dsum_exp_scores, np.ones(scores.shape[1]))                             #(5,1).(3,) = (5,3)
-    #print 'dexp_scores shape = ' , dexp_scores.shape
-    dcorr_scores = np.reshape(dcorr_scores , (N,))                                                #(5,)
-    #print 'dcorr_scores = ', dcorr_scores.shape
-    dexp_scores[n,y] += dcorr_scores                                                              #(5,1)
-    dscores = np.exp(scores) * dexp_scores     #(5,3)
-    #dscores_like = np.ones(scores.shape)
-    dscores[scores==0] = 0'''
-   # for i in range(scores.shape[0]):
-   #     for j in range(scores.shape[1]):
-   #         if scores[i,j] == s:
-   #             dscores_like[i,j] = 0
-    #dscores = dscores_like * dscores
     dW2 = np.dot(h1.T, dscores)                                                                  #(10,5).(5,3) = (10,3)
     dW2 += reg * W2
-    #print 'h1.T = ' , h1.T.shape
     db2 = np.sum(dscores, axis = 0)                                                               #(3,)
     dh1 = np.dot(dscores, W2.T)                                                                   #(5,3).(3,10) = (5,10)
-
     h1_like = np.ones(dh1.shape)                                                                  #(5,10)
     h1_like[h1<0] = 0
     m = dh1 * h1_like                                                                           #(5,10)
     dh1 += m
     dW1 = np.dot(X.T, dh1)                                                                       #(4,5).(5,10) = (4,10)
     dW1 += reg * W1
-    #print 'X.T = ' , X.T.shape
     db1 = np.sum(dh1, axis = 0)    #(10,)
 
     dW1 /= num_train
     dW2 /= num_train
     db1 /= num_train
     db2 /= num_train
-    #print 'db1 : ', db1
-    '''a, b = dW2.shape
-    c = b2.shape
-    dW2 = np.zeros((a,b))
-    #db2 = np.zeros(c)'''
     grads['W1'] = dW1
     grads['W2'] = dW2
     grads['b1'] = db1
